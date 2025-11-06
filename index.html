@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Euphonia — Home of Clasdical Music</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load new fonts: Lobster and Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Use Poppins as the default font */
+        body {
+            font-family: 'Libre Baskerville', serif;
+            /* Set black background as fallback */
+            background-color: #000;
+        }
+
+        /* Use Lobster for the main heading */
+        h1 {
+            font-family: 'Lobster', cursive;
+        }
+
+        /* Custom pulsing animation for the "LIVE" indicator */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+        .pulsing {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Custom styles for the range slider (volume) */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Webkit (Chrome, Safari) */
+        input[type=range]::-webkit-slider-runnable-track {
+            background: rgba(255, 255, 255, 0.3);
+            height: 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -0.25rem; /* (track-height / 2) - (thumb-height / 2) */
+            background-color: #ec4899; /* pink-500 */
+            height: 1rem;
+            width: 1rem;
+            border-radius: 50%;
+            border: none;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        input[type=range]:hover::-webkit-slider-thumb {
+            background-color: #f472b6; /* pink-400 */
+        }
+
+        /* Firefox */
+        input[type=range]::-moz-range-track {
+            background: rgba(255, 255, 255, 0.3);
+            height: 0.5rem;
+            border-radius: 0.5rem;
+            border: none;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            background-color: #ec4899; /* pink-500 */
+            height: 1rem;
+            width: 1rem;
+            border-radius: 50%;
+            border: none;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        input[type=range]:hover::-moz-range-thumb {
+            background-color: #f472b6; /* pink-400 */
+        }
+    </style>
+</head>
+<body 
+    class="antialiased text-white bg-black bg-cover bg-center bg-fixed" 
+    style="background-image: url('https://i.imgur.com/jJpRjxM.jpeg');">
+
+    <!-- Audio element for the stream -->
+    <audio id="audio-stream" src="https://stream.zeno.fm/risgdzpf1cxtv" preload="none"></audio>
+
+    <!-- Main container -->
+    <div class="min-h-screen flex items-center justify-center p-4">
+
+        <!-- Glassmorphism Card -->
+        <div class="w-full max-w-md bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl p-6 md:p-8 text-center overflow-hidden">
+            
+            <!-- Logo -->
+            <img src="https://i.imgur.com/PqGp3d6.png" alt="Radio Euphonia Logo" class="w-24 h-24 mx-auto mb-4 rounded-full shadow-lg">
+
+            <!-- Station Name -->
+            <h1 class="text-5xl font-bold text-white mb-1">Radio Euphonia</h1>
+            
+            <!-- Tagline -->
+            <p class="text-lg text-gray-200 mb-6">The dawn of pure sound.</p>
+
+            <!-- Aesthetic Audio Player -->
+            <div class="bg-black/30 rounded-lg p-6 my-6">
+                <!-- Live Indicator -->
+                <div class="flex items-center justify-center mb-4 space-x-2">
+                    <span id="live-indicator" class="text-red-500 font-bold uppercase tracking-wider text-sm">
+                        Live
+                    </span>
+                    <span class="relative flex h-3 w-3">
+                        <span id="live-dot-anim" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-0"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                </div>
+
+                <!-- Play/Pause Button -->
+                <button id="play-pause-btn" class="w-20 h-20 bg-pink-500 hover:bg-pink-600 transition-all duration-200 rounded-full flex items-center justify-center mx-auto shadow-lg text-white">
+                    <!-- Play Icon -->
+                    <svg id="play-icon" class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                    <!-- Pause Icon (hidden by default) -->
+                    <svg id="pause-icon" class="w-10 h-10 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                </button>
+
+                <!-- Volume Control -->
+                <div class="flex items-center space-x-3 mt-6">
+                    <!-- Volume Down Icon -->
+                    <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
+                    <!-- Volume Slider -->
+                    <input 
+                        id="volume-slider" 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value="50" 
+                        class="w-full h-2 accent-pink-500">
+                    <!-- Volume Up Icon -->
+                    <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                </div>
+            </div>
+
+            <!-- Slogan -->
+            <p class="text-xl font-light text-gray-100 italic">"In harmony, we exist."</p>
+
+            <!-- Text Content -->
+            <div class="text-left text-gray-200 mt-8 space-y-4 text-sm md:text-base">
+                <p>
+                    <strong>Welcome to Radio Euphonia</strong>, Bangladesh’s very first home for western classical music lovers! We bring you the world’s finest classical tunes, from Bach, Beethoven, and Mozart to timeless modern masters, all in one place. Stay tuned.
+                </p>
+                <p>
+                    <h3> Be with Classical Music, All Day, All Night</h3>
+                </p>
+            </div>
+
+            <!-- Website Link -->
+            <div class="mt-8">
+                <a href="https://radioeuphonia.vercel.app" target="_blank" rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition-colors duration-200 text-sm">
+                   🎼 LIVE LOVE LISTEN 🎵
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const audioStream = document.getElementById('audio-stream');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const playIcon = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            const volumeSlider = document.getElementById('volume-slider');
+            const liveIndicator = document.getElementById('live-indicator');
+            const liveDotAnim = document.getElementById('live-dot-anim');
+
+            // Set initial volume
+            audioStream.volume = volumeSlider.value / 100;
+
+            // Play/Pause button functionality
+            playPauseBtn.addEventListener('click', () => {
+                if (audioStream.paused) {
+                    audioStream.play().then(() => {
+                        // Success
+                        playIcon.classList.add('hidden');
+                        pauseIcon.classList.remove('hidden');
+                        liveIndicator.classList.add('pulsing');
+                        liveDotAnim.classList.remove('opacity-0');
+                    }).catch(error => {
+                        console.error('Error playing audio:', error);
+                        // Show an error to the user in a non-alert way if possible
+                    });
+                } else {
+                    audioStream.pause();
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    liveIndicator.classList.remove('pulsing');
+                    liveDotAnim.classList.add('opacity-0');
+                }
+            });
+
+            // Volume slider functionality
+            volumeSlider.addEventListener('input', () => {
+                audioStream.volume = volumeSlider.value / 100;
+            });
+
+            // Optional: If the stream ends or fails, reset the UI
+            audioStream.addEventListener('pause', () => {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                liveIndicator.classList.remove('pulsing');
+                liveDotAnim.classList.add('opacity-0');
+            });
+
+            audioStream.addEventListener('play', () => {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                liveIndicator.classList.add('pulsing');
+                liveDotAnim.classList.remove('opacity-0');
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
