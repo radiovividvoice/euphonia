@@ -76,19 +76,19 @@
     <!-- Preconnect & Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Libre+Baskerville:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Tailwind Configuration with extended fonts and colors
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
                         'lobster': ['Lobster', 'cursive'],
-                        'playfair': ['"Playfair Display"', 'serif'],
                         'baskerville': ['"Libre Baskerville"', 'serif'],
-                        'poppins': ['Poppins', 'sans-serif']
+                        'cormorant': ['"Cormorant Garamond"', 'serif']
                     },
                     colors: {
                         'gold': '#d4af37',
@@ -101,11 +101,21 @@
     </script>
 
     <style>
-        body { font-family: 'Libre Baskerville', serif; background-color: #000; }
-        h1 { font-family: 'Lobster', cursive; }
+        /* Base font for body content (Classical/Aesthetic feel) */
+        body { 
+            font-family: 'Libre Baskerville', serif; 
+            background-color: #000; 
+        }
+        /* Feature font for main title (Joyful/Aesthetic feel) */
+        h1 { 
+            font-family: 'Lobster', cursive; 
+        }
+
+        /* LIVE indicator pulse animation */
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.05); } }
         .pulsing { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
+        /* Custom styling for the volume range slider for consistent aesthetic look */
         input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; width: 100%; }
         input[type=range]::-webkit-slider-runnable-track { background: rgba(255, 255, 255, 0.3); height: 0.5rem; border-radius: 0.5rem; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -0.25rem; background-color: #ec4899; height: 1rem; width: 1rem; border-radius: 50%; border: none; }
@@ -113,6 +123,53 @@
         input[type=range]::-moz-range-track { background: rgba(255, 255, 255, 0.3); height: 0.5rem; border-radius: 0.5rem; border: none; }
         input[type=range]::-moz-range-thumb { background-color: #ec4899; height: 1rem; width: 1rem; border-radius: 50%; border: none; }
         input[type=range]:hover::-moz-range-thumb { background-color: #f472b6; }
+
+        /* Aesthetic Table Styling */
+        .schedule-table th, .schedule-table td {
+            padding: 0.5rem;
+            text-align: left;
+        }
+        .schedule-table th {
+            font-family: 'Lobster', cursive;
+            font-weight: 400; 
+            color: #fce7f3; 
+        }
+        .schedule-table tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .schedule-table tr:last-child {
+            border-bottom: none;
+        }
+        .schedule-table tr.current-program {
+            background-color: rgba(236, 72, 153, 0.15); 
+            border-left: 4px solid #ec4899; 
+            font-weight: 700;
+        }
+
+        /* Audio Player Container Setup */
+        .audio-player-container {
+            position: relative;
+            z-index: 10; 
+        }
+        
+        /* Visualizer Canvas Positioning (Absolute to fill container) */
+        #visualizer-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 0.5rem;
+            z-index: 1; 
+        }
+        
+        /* Content Wrapper for Player (Needed to sit above canvas) */
+        .player-content-wrapper {
+            position: relative;
+            z-index: 20; 
+            padding: 1.5rem; 
+        }
     </style>
 </head>
 <body class="antialiased text-white bg-black bg-cover bg-center bg-fixed" style="background-image: url('https://i.imgur.com/jJpRjxM.jpeg');">
@@ -127,64 +184,262 @@
             <h1 class="text-5xl font-bold text-white mb-1">Radio Euphonia</h1>
             <p class="text-lg text-gray-200 mb-6">Home of Classical Music</p>
 
-            <div class="bg-black/30 rounded-lg p-6 my-6">
-                <div class="flex items-center justify-center mb-4 space-x-2">
-                    <span id="live-indicator" class="text-red-500 font-bold uppercase tracking-wider text-sm">Live</span>
-                    <span class="relative flex h-3 w-3">
-                        <span id="live-dot-anim" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-0"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                </div>
+            <div class="audio-player-container bg-black/30 rounded-lg my-6">
+                <canvas id="visualizer-canvas" width="400" height="200"></canvas>
 
-                <button id="play-pause-btn" class="w-20 h-20 bg-pink-500 hover:bg-pink-600 transition-all duration-200 rounded-full flex items-center justify-center mx-auto shadow-lg text-white">
-                    <svg id="play-icon" class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-                    <svg id="pause-icon" class="w-10 h-10 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
-                </button>
+                <div class="player-content-wrapper">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-center mb-2 space-x-2">
+                            <span id="live-indicator" class="text-red-500 font-bold uppercase tracking-wider text-sm">Live</span>
+                            <span class="relative flex h-3 w-3">
+                                <span id="live-dot-anim" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-0"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                        </div>
+                        <p id="current-program" class="text-xl font-baskerville text-pink-400">Airing: Loading Program...</p>
+                    </div>
 
-                <div class="flex items-center space-x-3 mt-6">
-                    <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
-                    <input id="volume-slider" type="range" min="0" max="100" value="50" class="w-full h-2 accent-pink-500">
-                    <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <button id="play-pause-btn" class="w-20 h-20 bg-pink-500 hover:bg-pink-600 transition-all duration-200 rounded-full flex items-center justify-center mx-auto shadow-lg text-white">
+                        <svg id="play-icon" class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                        <svg id="pause-icon" class="w-10 h-10 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-6">
+                        <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
+                        <input id="volume-slider" type="range" min="0" max="100" value="50" class="w-full h-2 accent-pink-500">
+                        <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
                 </div>
             </div>
 
             <p class="text-xl font-light text-gray-100 italic">"In harmony, we exist."</p>
 
+            <!-- WELCOME MESSAGE WITH CORMORANT GARAMOND FONT -->
             <div class="text-left text-gray-200 mt-8 space-y-4 text-sm md:text-base">
-                <p><strong>Radio Euphonia is the first and only classical music radio station in Bangladesh.</strong> We bring you the world’s finest classical tunes, from Bach, Beethoven, and Mozart to timeless modern masters, all in one place. Stay tuned.</p>
-                <p><strong>Classical Music, All Day, All Night</strong></p>
+                <p class="font-cormorant"><strong>Radio Euphonia is the first and only classical music radio station in Bangladesh.</strong> We bring you the world’s finest classical tunes, from Bach, Beethoven, and Mozart to timeless modern masters, all in one place. Stay tuned.</p>
+            </div>
+            
+            <!-- Programme Schedule Table -->
+            <div class="mt-8 text-left">
+                <h3 class="text-2xl font-lobster text-pink-400 mb-3 text-center">Programme Schedule</h3>
+                
+                <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm overflow-x-auto">
+                    <table class="w-full text-sm schedule-table">
+                        <thead>
+                            <tr>
+                                <th class="text-gold">Time (Local)</th>
+                                <th class="text-gold">Programme Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedule-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <p id="local-digital-clock" class="text-3xl font-baskerville font-bold text-gold mt-4 text-center">00:00:00</p>
             </div>
 
             <div class="mt-8">
-                <a href="https://facebook.com/RadioEuphonia" target="_blank" rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition-colors duration-200 text-sm">
-                    🎼 LIVE LOVE LISTEN 🎵
+                <a href="https://facebook.com/RadioEuphonia" target="_blank" rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition-colors duration-200 text-sm font-bold uppercase tracking-wider">
+                    LIVE LOVE LISTEN
                 </a>
             </div>
         </div>
     </div>
 
     <script>
+        const SCHEDULE_GMT6 = [
+            { start: 7, end: 12, name: "Sinfonía" },
+            { start: 12, end: 17, name: "Rêverie" },
+            { start: 17, end: 22, name: "Harmonía" },
+            { start: 22, end: 3, name: "Aurora" },
+            { start: 3, end: 7, name: "Maestro" },
+        ];
+        
+        const SCHEDULE_ORDER = ["Sinfonía", "Rêverie", "Harmonía", "Aurora", "Maestro"];
+
+        let audioContext, analyser, source, canvas, ctx, isPlaying = false, audio;
+
+        function initializeAudioContext() {
+            if (audioContext) return;
+            try {
+                audio = document.getElementById('audio-stream');
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 64; 
+                source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                canvas = document.getElementById('visualizer-canvas');
+                ctx = canvas.getContext('2d');
+                const container = canvas.parentElement;
+                canvas.width = container.clientWidth * window.devicePixelRatio;
+                canvas.height = container.clientHeight * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio); 
+            } catch (e) {
+                console.error('AudioContext initialization failed:', e);
+            }
+        }
+
+        function drawVisualizer() {
+            if (!isPlaying || !analyser) {
+                const canvasWidth = canvas.width / window.devicePixelRatio;
+                const canvasHeight = canvas.height / window.devicePixelRatio;
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                return;
+            }
+            requestAnimationFrame(drawVisualizer);
+            const bufferLength = analyser.frequencyBinCount / 2; 
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            const canvasWidth = canvas.width / window.devicePixelRatio;
+            const canvasHeight = canvas.height / window.devicePixelRatio;
+            const centerLine = canvasHeight / 2;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            const barCount = 31; 
+            const barWidth = (canvasWidth / barCount) * 0.9;
+            const gap = canvasWidth / barCount * 0.1;
+            let x = gap / 2;
+            const gradient = ctx.createLinearGradient(0, 0, canvasWidth, 0);
+            gradient.addColorStop(0, 'rgba(236, 72, 153, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.7)');
+            gradient.addColorStop(1, 'rgba(236, 72, 153, 0.8)');
+            ctx.fillStyle = gradient;
+            for (let i = 0; i < barCount; i++) {
+                const dataIndex = Math.floor(i * (bufferLength / barCount));
+                let height = (dataArray[dataIndex] / 255) * centerLine * 0.9;
+                ctx.fillRect(x, centerLine - height, barWidth, height * 2);
+                x += barWidth + gap;
+            }
+        }
+
+        function formatHour(hour) {
+            const h = hour % 24;
+            const ampm = h >= 12 && h !== 0 && h !== 24 ? 'PM' : 'AM';
+            const displayHour = h % 12 || 12;
+            return `${String(displayHour).padStart(1, '0')}:00 ${ampm}`;
+        }
+
+        function gmt6ToLocalHour(gmt6Hour) {
+            const localDate = new Date();
+            const localOffsetHours = localDate.getTimezoneOffset() / 60; 
+            const gmt6OffsetHours = -6; 
+            const hourDifference = localOffsetHours - gmt6OffsetHours; 
+            let localHour = gmt6Hour + hourDifference;
+            localHour = (localHour % 24 + 24) % 24;
+            return Math.floor(localHour);
+        }
+
+        function localHourToGmt6Hour(localHour) {
+            const localDate = new Date();
+            const localOffsetHours = localDate.getTimezoneOffset() / 60; 
+            const gmt6OffsetHours = -6; 
+            const hourDifference = localOffsetHours - gmt6OffsetHours; 
+            let gmt6Hour = localHour - hourDifference;
+            gmt6Hour = (gmt6Hour % 24 + 24) % 24;
+            return Math.floor(gmt6Hour);
+        }
+
+        function getCurrentProgram(localHour) {
+            const currentGmt6Hour = localHourToGmt6Hour(localHour);
+            for (const program of SCHEDULE_GMT6) {
+                const startHour = program.start;
+                const endHour = program.end;
+                let isCurrent = false;
+                if (startHour < endHour) {
+                    if (currentGmt6Hour >= startHour && currentGmt6Hour < endHour) {
+                        isCurrent = true;
+                    }
+                } else {
+                    if (currentGmt6Hour >= startHour || currentGmt6Hour < endHour) {
+                        isCurrent = true;
+                    }
+                }
+                if (isCurrent) {
+                    return program.name;
+                }
+            }
+            return "Timeless Classical Selection"; 
+        }
+
+        function renderScheduleTable() {
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            const sortedSchedule = SCHEDULE_ORDER.map(name => 
+                SCHEDULE_GMT6.find(p => p.name === name)
+            ).filter(p => p); 
+            sortedSchedule.forEach(program => {
+                const localStart = gmt6ToLocalHour(program.start);
+                const localEnd = gmt6ToLocalHour(program.end);
+                const startTimeStr = formatHour(localStart);
+                const endTimeStr = formatHour(localEnd);
+                const row = document.createElement('tr');
+                row.setAttribute('data-program', program.name);
+                row.innerHTML = `
+                    <td class="whitespace-nowrap">${startTimeStr} - ${endTimeStr}</td>
+                    <td class="font-bold">${program.name}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            updateScheduleHighlight();
+        }
+        
+        function updateDigitalClock() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const timeString = now.toLocaleTimeString('en-US', timeOptions);
+            document.getElementById('local-digital-clock').textContent = timeString;
+        }
+
+        function updateScheduleHighlight() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentProgramName = getCurrentProgram(currentHour);
+            const currentProgramElement = document.getElementById('current-program');
+            currentProgramElement.textContent = `Airing: ${currentProgramName}`;
+            document.querySelectorAll('#schedule-body tr').forEach(row => {
+                row.classList.remove('current-program');
+                if (row.getAttribute('data-program') === currentProgramName) {
+                    row.classList.add('current-program');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const audioStream = document.getElementById('audio-stream');
             const playPauseBtn = document.getElementById('play-pause-btn');
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
             const volumeSlider = document.getElementById('volume-slider');
             const liveIndicator = document.getElementById('live-indicator');
             const liveDotAnim = document.getElementById('live-dot-anim');
+            audio = document.getElementById('audio-stream');
 
-            audioStream.volume = volumeSlider.value / 100;
+            renderScheduleTable();
+            updateDigitalClock();
+            setInterval(updateScheduleHighlight, 60000);
+            setInterval(updateDigitalClock, 1000);
+
+            audio.volume = volumeSlider.value / 100;
 
             playPauseBtn.addEventListener('click', () => {
-                if (audioStream.paused) {
-                    audioStream.play().then(() => {
+                initializeAudioContext();
+                if (audio.paused) {
+                    if (audioContext && audioContext.state === 'suspended') {
+                         audioContext.resume();
+                    }
+                    audio.play().then(() => {
+                        isPlaying = true;
                         playIcon.classList.add('hidden');
                         pauseIcon.classList.remove('hidden');
                         liveIndicator.classList.add('pulsing');
                         liveDotAnim.classList.remove('opacity-0');
-                    }).catch(err => console.error('Play failed:', err));
+                        drawVisualizer();
+                    }).catch(err => {
+                        console.error('Play failed:', err);
+                    });
                 } else {
-                    audioStream.pause();
+                    audio.pause();
+                    isPlaying = false;
                     playIcon.classList.remove('hidden');
                     pauseIcon.classList.add('hidden');
                     liveIndicator.classList.remove('pulsing');
@@ -193,21 +448,33 @@
             });
 
             volumeSlider.addEventListener('input', () => {
-                audioStream.volume = volumeSlider.value / 100;
+                audio.volume = volumeSlider.value / 100;
             });
 
-            audioStream.addEventListener('pause', () => {
+            audio.addEventListener('pause', () => {
+                isPlaying = false;
                 playIcon.classList.remove('hidden');
                 pauseIcon.classList.add('hidden');
                 liveIndicator.classList.remove('pulsing');
                 liveDotAnim.classList.add('opacity-0');
             });
 
-            audioStream.addEventListener('play', () => {
+            audio.addEventListener('play', () => {
+                isPlaying = true;
                 playIcon.classList.add('hidden');
                 pauseIcon.classList.remove('hidden');
                 liveIndicator.classList.add('pulsing');
                 liveDotAnim.classList.remove('opacity-0');
+                drawVisualizer();
+            });
+            
+            window.addEventListener('resize', () => {
+                if (canvas && canvas.parentElement) {
+                    const container = canvas.parentElement;
+                    canvas.width = container.clientWidth * window.devicePixelRatio;
+                    canvas.height = container.clientHeight * window.devicePixelRatio;
+                    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                }
             });
         });
     </script>
